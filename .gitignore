@@ -62,3 +62,6 @@ typings/
 
 
 .idea
+# Config file
+!config/default.conf
+config/**/*

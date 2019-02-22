@@ -34,7 +34,7 @@ database.connect(function (error, client) {
      * Создание HTTP сервера
      */
     const app = express();
-
+    console.log(config.get("server"));
     http.createServer(app).listen(config.get("server.port"), config.get("server.host"));
 
     app.set("config", config);
