@@ -60,7 +60,6 @@ database.connect(function (error, client) {
     }));
 
     app.use(cookieParser());
-
 });
 
 

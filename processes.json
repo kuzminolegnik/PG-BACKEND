@@ -1,0 +1,26 @@
+{
+  "apps": [
+    {
+
+      "script": "./app.js",
+      "name": "icsmonitoring",
+      "exec_mode": "fork",
+      "error_file": "./logger/error.log",
+      "out_file": "./logger/output.log",
+      "merge_logs": true,
+      "log_date_format": "YYYY-MM-DD HH:mm Z",
+      "max_memory_restart": "1000M",
+
+      "env": {
+        "name": "ics_develop",
+        "NODE_ENV": "develop"
+      },
+
+      "env_production" : {
+        "name": "ics_production",
+        "NODE_ENV": "production"
+      }
+
+    }
+  ]
+}
