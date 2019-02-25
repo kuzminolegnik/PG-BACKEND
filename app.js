@@ -37,8 +37,6 @@ database.connect(function (error, client) {
 
     http.createServer(app).listen(config.get("server.port"), config.get("server.host"));
 
-    app.get('/', (req, res) => res.send('Hello World!'));
-
     app.set("config", config);
     app.set("database.client", client);
     app.set("path.model", loggerPath);
