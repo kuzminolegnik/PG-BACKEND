@@ -30,6 +30,11 @@ database.connect(function (error, client) {
         throw new Error(error);
     }
 
+    client.query('select auth.logon($1::text,md5($2::text));', ['test', 'test'], function (err, res) {
+        console.log(err);
+        console.log(JSON.stringify(res.rows));
+    });
+
     /**
      * Создание HTTP сервера
      */

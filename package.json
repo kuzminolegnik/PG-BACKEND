@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "export PATH=/usr/bin:$PATH;export PM2_HOME=\"/var/www/icsmonitoring/backend/.pm2\"; pm2 start ./processes.json --env production"
+    "start": "pm2 start ./processes.json --env production"
   },
   "dependencies": {
     "body-parser": "~1.15.1",
