@@ -12,6 +12,11 @@
       "max_memory_restart": "1000M",
 
       "env": {
+        "name": "ics_local",
+        "NODE_ENV": "local"
+      },
+
+      "env_develop": {
         "name": "ics_develop",
         "NODE_ENV": "develop"
       },
