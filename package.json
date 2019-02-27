@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "pm2 start ./processes.json --env production"
+    "start": "pm2 start ./processes.json --env production",
+    "start_develop": "pm2 start ./processes.json --env develop"
   },
   "dependencies": {
     "body-parser": "~1.15.1",
