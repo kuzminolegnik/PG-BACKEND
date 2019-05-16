@@ -27,14 +27,14 @@ module.exports = class Router {
         me.router = router;
         me.name = name;
 
-        app.use(path.join("/", name), router);
+        app.use(path.join("/", name).replace(new RegExp("\\\\", 'g'), "/"), router);
     }
 
     getModel(name) {
         let me = this,
             app = me.app,
-            Model = require(path.join("/", app.get('path.model'), 'base')),
-            pathLoad = path.join("/", app.get('path.model'), name),
+            Model = require(path.join(app.get('path.model'), 'base')),
+            pathLoad = path.join(app.get('path.model'), name),
             modelConfig;
 
         if (!listLoadModule[pathLoad]) {

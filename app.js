@@ -125,6 +125,7 @@ database.connect(function (error, client) {
 
         if (!configRoute['name']) {
             configRoute['name'] = path.relative(routePath, route);
+            configRoute['name'] = configRoute['name'].replace(new RegExp("\\\\", 'g'), "/");
         }
 
         configRoute['app'] = app;
