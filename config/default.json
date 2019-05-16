@@ -11,7 +11,7 @@
     "host": "192.168.1.75",
     "port": "5432",
     "database": "icsmonitoring",
-    "user": "icsonline",
+    "user": "far",
     "password": "1234"
   }
 }
