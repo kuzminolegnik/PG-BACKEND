@@ -13,8 +13,22 @@ module.exports = {
                     defaultValue: null
                 },
                 {
-                    name: 'login',
+                    name: 'data',
+                    defaultValue: null
+                }
+            ]
+        },
+
+        edit: {
+            procedure: 'web_members_edit',
+            arguments: [
+                {
+                    name: 'session',
                     type: 'string',
+                    defaultValue: null
+                },
+                {
+                    name: 'data',
                     defaultValue: null
                 }
             ]

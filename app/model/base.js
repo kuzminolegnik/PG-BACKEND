@@ -1,33 +1,33 @@
 let createRunQueryFromParams = function (destParams) {
-        let me = this,
-            destArguments = destParams['arguments'],
-            procedure = destParams['procedure'],
-            schema = destParams['schema'];
+    let me = this,
+        destArguments = destParams['arguments'],
+        procedure = destParams['procedure'],
+        schema = destParams['schema'];
 
-        return function (sourceParams) {
-            let sourceArguments = sourceParams['values'] || {},
-                values = [], value;
+    return function (sourceParams) {
+        let sourceArguments = sourceParams['values'] || {},
+            values = [], value;
 
-            destArguments.forEach(function (arg) {
-                value = sourceArguments[arg['name']] ? sourceArguments[arg['name']] : arg['defaultValue'];
+        destArguments.forEach(function (arg) {
+            value = sourceArguments[arg['name']] ? sourceArguments[arg['name']] : arg['defaultValue'];
 
-                values.push({
-                    type: arg['type'],
-                    value: value
-                });
-
-            });
-            me.runQuery({
-                schema: schema || me.schema,
-                procedure: procedure,
-                values: values,
-                callback: sourceParams['callback'],
-                success: sourceParams['success'],
-                failure: sourceParams['failure']
+            values.push({
+                type: arg['type'],
+                value: value
             });
 
-        }.bind(me);
-    };
+        });
+        me.runQuery({
+            schema: schema || me.schema,
+            procedure: procedure,
+            values: values,
+            callback: sourceParams['callback'],
+            success: sourceParams['success'],
+            failure: sourceParams['failure']
+        });
+
+    }.bind(me);
+};
 
 module.exports = class Model {
 
@@ -60,9 +60,12 @@ module.exports = class Model {
             partsValue = [],
             data;
 
-        callback = callback || function () {};
-        success = success || function () {};
-        failure = failure || function () {};
+        callback = callback || function () {
+        };
+        success = success || function () {
+        };
+        failure = failure || function () {
+        };
 
         if (values) {
             values.forEach(function (row) {
@@ -70,12 +73,26 @@ module.exports = class Model {
                 partsArg.push('$' + (partsArg.length + 1) + (row['type'] && row['type'] === 'string' ? '::text' : ''));
             });
         }
-        console.log('select ' + schema + '.' + procedure + '(' + partsArg.join(',') + ');')
-        console.log(partsValue)
+
         client.query('select ' + schema + '.' + procedure + '(' + partsArg.join(',') + ');', partsValue, function (error, result) {
+
             if (error) {
-                callback(error);
-                failure(error);
+                callback({
+                    procedure: {
+                        name: 'select ' + schema + '.' + procedure + '(' + partsArg.join(',') + ');',
+                        args: partsValue
+                    },
+                    message: error.message,
+                    success: false
+                });
+                failure({
+                    procedure: {
+                        name: 'select ' + schema + '.' + procedure + '(' + partsArg.join(',') + ');',
+                        args: partsValue
+                    },
+                    message: error.message,
+                    success: false
+                });
                 return;
             }
             if (!result['rows']) {
@@ -85,6 +102,11 @@ module.exports = class Model {
             }
 
             data = result['rows'][0][procedure];
+
+            data['procedure'] = {
+                name: 'select ' + schema + '.' + procedure + '(' + partsArg.join(',') + ');',
+                args: partsValue
+            };
 
             if (data['success']) {
                 callback(data);

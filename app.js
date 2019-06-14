@@ -66,7 +66,7 @@ database.connect(function (error, client) {
     app.use(function (req, res, next) {
 
         req.getHash = function (key) {
-            key = key || "hash";
+            key = key || "session_hash";
             var hash;
             if (req.cookies[key]) {
                 hash = req.cookies[key];
@@ -77,7 +77,12 @@ database.connect(function (error, client) {
             else {
                 hash = req.body[key] || req.query[key];
             }
-            return hash
+
+            return hash || req.headers['x-session-hash'];
+        };
+
+        req.getContext = function () {
+            return Number(req.headers['x-context-hash']);
         };
 
         res.sendData = function (value) {

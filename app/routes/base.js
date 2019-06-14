@@ -37,6 +37,8 @@ module.exports = class Router {
             pathLoad = path.join(app.get('path.model'), name),
             modelConfig;
 
+        pathLoad = path.join.apply(path, pathLoad.split('.'));
+
         if (!listLoadModule[pathLoad]) {
             modelConfig = require(pathLoad);
             modelConfig['app'] = app;
