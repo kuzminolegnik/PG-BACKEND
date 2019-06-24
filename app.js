@@ -5,6 +5,7 @@ let express = require('express'),
     bodyParser = require('body-parser'),
     config = require("config"),
     pg = require('pg'),
+    nodemailer = require('nodemailer'),
 
     path = require('path'),
     fs = require('fs'),
@@ -14,6 +15,7 @@ let express = require('express'),
     loggerPath = path.join(rootPath, "logger"),
     modelPath = path.join(rootPath, "app/model"),
     routePath = path.join(rootPath, "app/routes");
+
 
 /*
  * Создание директорий если они отсутствуют
@@ -34,6 +36,7 @@ database.connect(function (error, client) {
      * Создание HTTP сервера
      */
     const app = express();
+    const transporter = nodemailer.createTransport(config.mail);
 
     app.use(cors());
 
@@ -64,6 +67,28 @@ database.connect(function (error, client) {
     app.use(cookieParser());
 
     app.use(function (req, res, next) {
+
+        res.sendMail = function (parameters) {
+            let {from, to, subject, html, attachments, success, failure} = parameters;
+
+            transporter.sendMail({
+                from: "ICSMonitoring <" + config.mail.auth.user + ">",
+                to: to,
+                attachments: attachments,
+                subject: subject,
+                html: html
+            }, function (error, response) {
+                if (error) {
+                    failure({
+                        status: 500,
+                        error: error
+                    });
+                    return;
+                }
+                success(response)
+            });
+
+        };
 
         req.getHash = function (key) {
             key = key || "session_hash";

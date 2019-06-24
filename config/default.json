@@ -13,5 +13,14 @@
     "database": "icsmonitoring",
     "user": "far",
     "password": "1234"
+  },
+  "mail": {
+    "host": "smtp.yandex.ru",
+    "port": 465,
+    "secure": true,
+    "auth": {
+      "user": "website.website.dsoft@yandex.ru",
+      "pass": "Astra3232"
+    }
   }
 }
