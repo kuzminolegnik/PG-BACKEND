@@ -5,24 +5,33 @@ let express = require('express'),
     bodyParser = require('body-parser'),
     config = require("config"),
     pg = require('pg'),
-    nodemailer = require('nodemailer'),
 
     path = require('path'),
     fs = require('fs'),
     http = require('http'),
 
     rootPath = __dirname,
+
     loggerPath = path.join(rootPath, "logger"),
+
+    pluginsPath = path.join(rootPath, "plugins"),
+
     modelPath = path.join(rootPath, "app/model"),
-    routePath = path.join(rootPath, "app/routes");
+    routePath = path.join(rootPath, "app/routes"),
+    loadModules = {},
 
-
+    resourcesPath = config.get("files.path") || path.join(rootPath, "resources");
 /*
  * Создание директорий если они отсутствуют
  */
 !fs.existsSync(modelPath) ? fs.mkdirSync(modelPath, {recursive: true}) : null;
 !fs.existsSync(routePath) ? fs.mkdirSync(routePath, {recursive: true}) : null;
+
 !fs.existsSync(loggerPath) ? fs.mkdirSync(loggerPath, {recursive: true}) : null;
+
+!fs.existsSync(resourcesPath) ? fs.mkdirSync(resourcesPath, {recursive: true}) : null;
+
+!fs.existsSync(pluginsPath) ? fs.mkdirSync(pluginsPath, {recursive: true}) : null;
 
 const database = new pg.Client(config.get("database"));
 
@@ -36,7 +45,6 @@ database.connect(function (error, client) {
      * Создание HTTP сервера
      */
     const app = express();
-    const transporter = nodemailer.createTransport(config.mail);
 
     app.use(cors());
 
@@ -44,9 +52,14 @@ database.connect(function (error, client) {
 
     app.set("config", config);
     app.set("database.client", client);
-    app.set("path.model", modelPath);
+
     app.set("path.logger", loggerPath);
+
+    app.set("path.resources", resourcesPath);
+
+    app.set("path.model", modelPath);
     app.set("path.routes", routePath);
+
 
     /**
      * Открытие патока для записи логов в файл
@@ -66,103 +79,77 @@ database.connect(function (error, client) {
 
     app.use(cookieParser());
 
-    app.use(function (req, res, next) {
+    let plugins = fs.readdirSync(pluginsPath, {withFileTypes: true});
 
-        res.sendMail = function (parameters) {
-            let {from, to, subject, html, attachments, success, failure} = parameters;
+    plugins.forEach(function (plugin) {
 
-            transporter.sendMail({
-                from: "ICSMonitoring <" + config.mail.auth.user + ">",
-                to: to,
-                attachments: attachments,
-                subject: subject,
-                html: html
-            }, function (error, response) {
-                if (error) {
-                    failure({
-                        status: 500,
-                        error: error
-                    });
-                    return;
-                }
-                success(response)
+        if (plugin.isFile()) {
+            plugin = require(path.join(pluginsPath, path.parse(plugin['name'])['name']));
+            app.use(function (req, res, next) {
+                plugin.apply(app, arguments);
             });
-
-        };
-
-        req.getHash = function (key) {
-            key = key || "session_hash";
-            var hash;
-            if (req.cookies[key]) {
-                hash = req.cookies[key];
-            }
-            else if (req.method === "GET") {
-                hash = req.query[key];
-            }
-            else {
-                hash = req.body[key] || req.query[key];
-            }
-
-            return hash || req.headers['x-session-hash'];
-        };
-
-        req.getContext = function () {
-            return Number(req.headers['x-context-hash']);
-        };
-
-        res.sendData = function (value) {
-
-            if (value && value['status_code']) {
-                res.status(value['status_code'] || 200);
-                delete value['status_code'];
-            }
-
-            res.json(value);
-        };
-
-        next();
-
-    });
-
-
-    let Route = require(path.join(routePath, 'base')),
-        listRoutes = [], configRoute,
-
-        loadRoute = function (currentRoutePath) {
-
-            let items = fs.readdirSync(currentRoutePath, {withFileTypes: true});
-
-            items.forEach(function (item) {
-
-                if (!item.isFile()) {
-                    loadRoute(path.join(currentRoutePath, item['name']));
-                    return;
-                }
-
-                if (path.parse(item['name'])['name'] !== 'base') {
-                    listRoutes.push(path.join(currentRoutePath, path.parse(item['name'])['name']));
-                }
-
-            });
-
-        };
-
-    loadRoute(routePath);
-
-    listRoutes.forEach(function (route) {
-
-        configRoute = require(route);
-
-        if (!configRoute['name']) {
-            configRoute['name'] = path.relative(routePath, route);
-            configRoute['name'] = configRoute['name'].replace(new RegExp("\\\\", 'g'), "/");
         }
 
-        configRoute['app'] = app;
-
-        new Route(configRoute)
-
     });
+
+    app.getRoute = function (name) {
+        let me = this,
+            pathLoad = path.join(me.get(`path.routes`), path.join.apply(path, name.split('.')) );
+
+        if (!loadModules[pathLoad]) {
+            loadModules[pathLoad] = require(pathLoad).apply(me, arguments);
+        }
+
+        return loadModules[pathLoad];
+    };
+
+    app.getModel = function (name) {
+        let me = this,
+            pathLoad = path.join(me.get(`path.model`), path.join.apply(path, name.split('.')) );
+
+        if (!loadModules[pathLoad]) {
+            loadModules[pathLoad] = require(pathLoad).apply(app, arguments);
+        }
+
+        return loadModules[pathLoad];
+    };
+
+    let initRoutes = function () {
+        let pathRoute = app.get("path.routes"),
+            routes = [], prefix,
+
+            loadRoute = function (currentRoutePath) {
+
+                let items = fs.readdirSync(currentRoutePath, {withFileTypes: true});
+
+                items.forEach(function (item) {
+
+                    if (!item.isFile()) {
+                        if (item['name'] !== 'base') {
+                            loadRoute(path.join(currentRoutePath, item['name']));
+                        }
+                        return;
+                    }
+
+                    routes.push(path.join(currentRoutePath, path.parse(item['name'])['name']));
+                });
+
+            };
+
+        loadRoute(pathRoute);
+
+        routes.forEach(function (route) {
+
+
+            prefix = path.relative(pathRoute, route);
+            prefix = prefix.replace(new RegExp("\\\\", 'g'), "/");
+
+            require(route).apply(app, [{prefix}])
+
+        });
+    };
+
+    initRoutes();
 
     app.get('/*', function(req, res) {
         res.status(404).end();

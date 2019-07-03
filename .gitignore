@@ -69,3 +69,6 @@ config/**/*
 
 # pm2 files
 .ipm2
+
+# Resources
+/resources/*
