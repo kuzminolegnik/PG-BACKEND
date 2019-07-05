@@ -56,7 +56,11 @@ module.exports = function (config) {
                                 mime_type: file["type"]
                             }
                         },
-                        success: res.sendData,
+                        success: function (metaData) {
+                            metaData['result'] = metaData['result'] ? metaData['result'][0] : null;
+
+                            res.sendData(metaData);
+                        },
                         failure: function (metaData) {
                             userFileModel.delete({
                                 file: file,
@@ -68,68 +72,6 @@ module.exports = function (config) {
                             });
                         }
                     });
-                }
-            });
-
-        },
-
-        '[PUT]/:id': function (req, res) {
-            let file = req.files["upload"];
-
-            file['entityId'] = req.body["entityId"];
-
-            userDBModel.record({
-                values: {
-                    session: req.getHash(),
-                    id: req.params["id"]
-                },
-                failure: res.sendData,
-                success: function (metaData) {
-
-                    let record = metaData['result'] ? metaData['result'][0] : null;
-
-                    userFileModel.delete({
-                        file: {
-                            entityId: record["entity_id"],
-                            name: record["name"]
-                        },
-                        failure: res.sendData,
-                        success: function () {
-
-                            userFileModel.update({
-                                file: file,
-                                failure: res.sendData,
-                                success: function () {
-                                    userDBModel.create({
-                                        values: {
-                                            session: req.getHash(),
-                                            data: {
-                                                entity_id: req.body["entityId"],
-                                                type_id: 1,
-                                                name: file["name"],
-                                                size: file["size"],
-                                                mime_type: file["type"]
-                                            }
-                                        },
-                                        success: res.sendData,
-                                        failure: function (metaData) {
-
-                                            userFileModel.delete({
-                                                file: file,
-                                                callback: function () {
-                                                    metaData['result'] = metaData['result'] ? metaData['result'][0] : null;
-
-                                                    res.sendData(metaData);
-                                                }
-                                            });
-
-                                        }
-                                    });
-                                }
-                            });
-
-                        }
-                    })
                 }
             });
 
