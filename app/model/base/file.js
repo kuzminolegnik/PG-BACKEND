@@ -305,7 +305,7 @@ module.exports = function () {
             loadFile({
                 path: pathTmp,
                 failure: failure,
-                success: function (buffer) {
+                success: function (result) {
 
                     fs.mkdir(filePath, {recursive: true}, function (error) {
                         if (error) {
@@ -328,7 +328,7 @@ module.exports = function () {
                             return
                         }
 
-                        fs.writeFile(path.join(filePath, name), buffer, function (error) {
+                        fs.writeFile(path.join(filePath, name), result.buffer, function (error) {
 
                             if (error) {
                                 if (typeof failure === "function") {
@@ -351,14 +351,14 @@ module.exports = function () {
 
                             if (typeof success === "function") {
                                 success({
-                                    buffer: buffer,
+                                    buffer: result.buffer,
                                     success: true
                                 });
                             }
 
                             if (typeof callback === "function") {
                                 callback({
-                                    buffer: buffer,
+                                    buffer: result.buffer,
                                     success: true
                                 });
                             }
@@ -380,8 +380,8 @@ module.exports = function () {
             loadFile({
                 path: filePath,
                 failure: failure,
-                success: function (buffer) {
-                    fs.unlink(buffer, function (error) {
+                success: function (result) {
+                    fs.unlink(result.buffer, function (error) {
                         if (error) {
                             if (typeof failure === "function") {
                                 failure({
